@@ -1,0 +1,364 @@
+import cv2
+img=cv2.imread('d:\\f3.jpg',cv2.IMREAD_UNCHANGED)#不改变原本图像
+b=img[58,99,0]#看一个通道的值
+print(b)#查看像素点 0为blue 1为green 2为red
+print(img[23,45])#直接打印所有通道的值
+img[34,55]=[124,123,122]#可直接赋值
+img[23,45,0]=233#可通过不同颜色模式进行赋值
+
+#批量更改   255表示白色
+img[100:150,60:90]=[255,255,255]#第一百行到一百五十行
+                                #第六十列到第九十列     都变成后面那个颜色
+import cv2
+import numpy as np
+img=cv2.imread('d:\\f3.jpg',cv2.IMREAD_UNCHANGED)
+img.itemset((100,20,1),222)#修改像素
+p=img.item(100,29,0)#读取像素 使用item必须加上通道
+print(p)
+
+
+###图像属性查询
+print(img.shape)
+彩图(行，列，像素通道数)
+灰度图（行，列）灰度图通道数为0
+
+img.size
+行*列*通道数
+rows,cols,chn=img.shape
+img.dtype
+显示像素类型
+
+#椒盐噪声 高速噪声
+
+###通道拆分和合并
+方法1
+b=img[:,:,0]
+g=img[:,:,1]
+r=img[:,:,2]
+方法二
+b，g，r=cv2.spilt(img) 或b=cv2.spilt(img)[0]//把单独的通道拆分出来相当于是 拆出来一个图层
+cv2.imshow('B',b)//前面一个是窗口名
+cv2.waitKey()//  n>0等待n毫秒   n<0 等待键盘单击  n=0无限等待
+cv2.destroyAllWindows()
+
+##合并
+cv2.merge([b,g,r])//在pycahrm里通道顺序是bgr 所以变换合并顺序 图像是会变的
+                                  //merge([b,g,r])!=mergr([r,g,b])
+##生成一个全是0的图层
+g=np.zeros((rows,cols),a.dtype)
+
+###图像的加法运算(前提时图像像素类型一致)
+方法一numpy
+叫做取模运算（即%255）
+因为两个图像相加时 像素值可能会超过255 此时超过的数进行取模运算
+导入后直接用：img3=img2+img1
+方法二cv2
+叫饱和运算
+当像素值比255大时 直接取255
+cv2.add(img1,img2)
+
+对于减法的话 一般是用img3=img2-img1(numpy)
+
+
+###将图像融合 变为一张更清晰的图像
+可以采用不同图片的像素分配不同比例的权重来实现
+cv2.addWeighted(img1,a,img2,b,n) a和b是权重 n时亮度调节值 不可忽略（不调节 就写0）
+权重最大是1
+这个本质就是加法 且cv2是饱和运算 如果像素值太大 会变为255 会变成一片白
+同理 像素类型得一致 和加法一样
+
+###图像类型转化
+img1=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)//彩色转灰色
+img2=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)//同理 a转b 代码最后变为（img，cv2.COLOR_a2b）
+注意点：灰度图转彩色图时 显示的是灰度图
+但这个灰色是bgr三个通道调出来的灰色 此时图片已经是三通道了 是一个彩色图
+为什么转换不成原来的图像的原因是 彩转灰时三个通道的像素值会变成一个值（因为灰度图只有单通道）
+                                                         但彩图有三个通道 只知道灰度值 三个通道的像素值解 有无数种
+                                                         所以此时图像的三个图层像素值完全一致 变为bgr调出来灰度图
+                                                         看着是灰度图 但实际上是彩图
+
+###图像翻转（左右 上下）
+img1=flipcode（img，0）  上下
+img1=flipcode（img，1）第二个参数大于0即可 左右
+img1=flipcode（img，-1）第二个参数小于0即可 上下左右各一次
+
+###阈值分割
+
+类型1 二进制阈值化
+设定一个阈值n
+比阈值大变为最大值
+比阈值小或等于变0
+类型2 反二进制阈值化
+
+类型3 截断阈值化
+比设定小 不变
+比设定大或等于 变为该设定值
+
+类型4 阈值化为0
+比设定大 变不变
+小于等于 变为0
+类型5 反阈值化为0
+
+###threshold
+r，img2=cv2.threshold(img,127,255,cv2.THRESH_BINARY)二进制阈值化
+r是阈值 和后面括号里的127 是一致的
+img2是处理后的图片
+255是最大值 只在二进制阈值化时有用  因为只有这时元素值会变为设定最大值
+cv2.THRESH_BINARY  阈值化类型
+
+cv.THRESH_BINARY
+cv.THRESH_BINARY_INV
+ cv.THRESH_TRUNC 截断
+cv.THRESH_TOZERO 阈值化为0
+cv.THRESH_TOZERO_INV
+
+###inrange函数 hsv
+inRange()函数可实现二值化功能（这点类似threshold()函数）
+更关键的是可以同时针对多通道进行操作
+主要是将在两个阈值内的像素值设置为白色（255），而不在阈值区间内的像素值设置为黑色（0），该功能类似于之间所讲的双阈值化操作。
+
+###滤波
+
+1 均值滤波
+取a*b 所有像素相加求出平均值 作为中心点的值
+img2=cv2.blur(img,（a，b）)
+a列 b行
+一般会取奇数方阵，让像素点位于最中间 但取别的也行
+2 方框滤波
+img2=cv2.boxFilter(img,-1,(a,b),K)
+第二个参数表示图像深度 取-1表示和原图一致
+K是归一化处理参数 只有1和0 默认为1
+归一化处理就是求平均值 这时和均值滤波一致
+不开的时候就是核简单相加 这时会超过255 则直接取255
+3 高斯滤波
+img2=cv2.GaussianBlur(img,(n,n),k)
+n一定是奇数
+k时x方向的方差 表示权重      一般情况下用0就可以 他也会自动算出合适的值
+4 中值滤波
+核内所有的像素值排序 最中间的像素值大小
+img2=cv2.medianBlur(img,k)
+这里不用元组了 直接是一个整数 产生k*k的核
+但k只能是奇数 正数
+
+###图像 腐蚀
+一般针对二值图像 只针对1的像素
+输入有两个 img和卷积核
+核是有大小的 当核所在的像素都为1时 不变
+            但核中存在一部分为1 一部分为0时 整个核的范围全部变成0
+img2=cv2.erode(img,ker,iterations=n)
+n为你要进行的次数 默认为1次
+
+要创建一个卷积核ker  ker一般为一个全是一的卷积核    这时n可以随便取
+    ker=np.ones((n,n),np.uint8)
+后边这个参数是卷积核内数据的类型 一般为int就可以了
+
+###图像膨胀（腐蚀的逆操作）
+主要用于对腐蚀过的图像进行膨胀 实现去噪
+当核所在的像素都为0时 不变
+但核中只要有1 整个核的范围全部变成1
+img2=cv2.dilate(img,ker,iterations=n) 同理腐蚀
+
+morphologyEx称为 形态学扩展函数
+###开运算
+对图像进行先腐蚀后膨胀操作 用于去噪
+img2=cv2.morphologyEx(img,cv2.MORPH_OPEN,ker)
+去除不彻底的化 可以将ker调大一点   是n调大一点
+
+###闭运算
+对图像进行先膨胀后腐蚀操作 用于去除景物内部的小黑点 噪点
+img2=cv2.morphologyEx(img,cv2.MORPHzzz_CLOSE,ker)
+
+###梯度图像
+膨胀图像减掉腐蚀图像 可以得到梯度图像（实际上是一个轮廓）
+img2=cv2.morphologyEx(img,cv2.MORPH_GRADIENT,ker)//梯度运算
+用函数直接完成这一操作   生产膨胀，腐蚀 以及两者相减
+
+###图像礼帽/顶帽
+获得img的噪声图像
+img2=cv2,morphologyEx(img,cv2.MORPH_TOPHAT,ker)
+
+###图像黑帽
+获得景物内部的噪声图像
+img2=cv2.morphologyEx(img,cv2.MORPH_BLACKHAT,ker)
+
+
+###图像梯度中的 sobel算子
+用于求梯度 也就是边界
+梯度G^2=Gx^2+Gy^2
+为了方便一般用 G=|Gx|+|Gy|
+img2(梯度图像)=cv2.Sobel(img,-1,1/0,1/0,n)
+第二个参数是图像位深度 一般取-1
+                  但有一个问题 当dx或dy为负数时会取值为0
+          这会导致轮廓或者边界少一边
+                   所以我们需要扩大范围 取到负数
+                   用cv2.CV_64F    img2=cv2.Sobel(img,cv2.CV_64F,1/0,1/0,n)
+          但这还不够 因为没有变为绝对值
+                   所以还需要代码 见下
+第三个参数x轴方向
+第四个参数y轴方向
+第五个参数是核大小 我们一般不设置 默认为3 当这个参数为-1时 就表示用scharr算子
+dx=cv2.Sobel(img,-1,1,0)表示计算x轴梯度
+dy=cv2.Sobel(img,-1,0,1)表示计算y轴梯度
+梯度G=dx+dy
+一般不用G=cv2.Sobel(img,-1,1,1) 这个会出问题
+
+dx=cv2.Sobel(img,cv2.CV_64F,1,0)
+dy=cv2.Sobel(img,cv2.CV_64F,0,1)
+dx=cv2.convertScaleAbs(dx)
+dy=cv2.convertScaleAbs(dy)//转为绝对值
+#dst=dx+dy//使用了numpy直接相加 是取模运算
+dst=cv2.addWeighted(dx,0.5,dy,0.5,0)//权重一般都取0.5
+cv2.imshow('x',dst)
+
+###图像梯度的 scharr算子
+当sobel算出的边界不太准确时 scahrr算子更准确
+scharr可以当作sobel的改进
+所以一般直接用scharr
+dst=Scharr(img,cv2.CV_64F,dx,dy)
+dst=cv2.convertScaleAbs(dst)
+和sobel一致 dx dy要分开算
+
+###图像梯度laplacian算子 拉普拉斯算子
+类似于两阶sobel
+但还是不如scahrr精准
+sobel是上下左右绝对值各减一次后相加
+拉普拉斯是这个值*2
+dst=cv2.Laplacian(img,cv2.CV_64F)
+dst=cv2.convertScaleAbs(dst)
+
+###canny边缘检测
+操作：
+1去噪 用高斯滤波去除噪点
+2梯度 这个梯度既有方向又有大小
+          梯度的方向只有四个 一般分为水平 垂直 和两个对角线
+          所以左右其实是一类 同理上下
+3非极大值抑制
+遍历像素点 只保留每一列或者每一行 同方向最大的边界像素点
+4滞后阈值
+处理时会取两个阈值 一个max 一个min
+比max大 保留
+比min小 舍去
+中间的值 与边界相连的点保留 不相连的点舍去
+
+###canny函数
+edge=cv2.Canny(img,threshold1,threshold2)
+一个上边界阈值 一个为下边界阈值
+两个值越小 显示的边缘越细致  注：是两个值都大
+反之 越大 边缘越粗糙
+
+###图像金字塔
+向上采样 图像会模糊 缩小
+向下采样 图像会丢失信息 放大
+所以向上取样和向下取样是不可逆的
+
+img2=cv2.pyrDown（img）
+img2=cv2.pyrUp（img）
+
+##拉普拉斯金字塔
+
+第i层图像=Gi-pyrUp（pyrDown（Gi））
+Gi表示原始图像
+G0表示原图
+G1表示pyrdown（img）
+G2表示pyrdown（pyrdown（img））
+
+###轮廓
+首先 边缘不等于轮廓
+边缘是不连续的 而将边缘连接在一起才是轮廓
+
+一般做边缘检测要先转化为二值图像
+查找轮廓一般会修改图像 所以需要备份
+区分前景色和背景色 opencv默认黑色为背景色 当白色为背景时 需要转颜色 将黑色作为背景
+
+contours=cv2.findContours(img,mode,method)[0]
+
+第二个参数是检索模式
+cv2.RETR_EXTERNAL只检索外轮廓
+CV2.RETR_TREE所有轮廓
+第三个参数是轮廓的近似方法
+cv2.CHAIN_APPROX_NONE记录所有轮廓点
+cv2.CHAIN_APPROX_SIMPLE简单记录 自行压缩 如：矩形只储存四个点
+
+img1=cv2.drawContours(img,contours,-1,(B,G,R),thickness)
+-1表示绘制所有轮廓
+
+实操:
+img=f3.copy()
+img1=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+r,binary=threshold(img1,127,255,cv2.THRESH_BINARY)//此时binary就是二值图像
+contours=cv2.findContours(binary,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[0]
+dst1=cv2.drawContours(img,contours,-1,(0,0,255),1)//最后画边界的时候要用复制的图像
+cv2.imshow('dst1',dst1)
+
+###灰度直方图
+横坐标是各个像素点的灰度级（0-255）
+纵坐标表示该灰度级的像素个数
+
+归一化直方图
+纵坐标表示出现该灰度值的概率
+
+bins表示参数子集的数目
+可以实现一部分灰度值分为一组
+
+绘制灰度直方图
+方法一：（利用一个绘图库）
+import matplotlib.pyplot as plt
+plt.hist(img.ravel(),256)//img得是灰度图
+
+方法二：
+hist=cv2.calcHist(img,channel,mask,bins number,ranges,acc)
+channel:[0] [1] [2] BGR
+mask 掩膜图像
+bins number:[256]
+ranges:[0,255]
+acc 为累计 当好几个图片统计时要用   一般直接省略
+
+import matplotlib.pyplot as plt
+hist=cv2.calcHist([img],[0],None,[256],[0,255])
+plt.plot(hist,color='r')
+plt.show()
+
+###掩膜
+生成掩膜
+mask=np.zeros(img.shape,np.uint8)//生成全黑图像
+mask[200:400,200:400]=255 //生成白色区域
+
+生成掩膜图像（实质就是每一个对应像素点进行 与操作）
+img2=cv2.bitwise_and(img,mask)
+
+###直方图均衡化
+主要用于处理图像过亮或过暗
+img2=cv2.equalizeHist(img)
+
+###plt.subplot函数
+用于将一个窗口分为若干个 同时显示多个表格或图片
+plt.subplot(a,b,c)
+a行b列 c号窗口
+import matplotlib.pyplot as plt
+plt.subplot(2,3,1)
+plt.hist(img1.ravel(),256)
+plt.subplot(2,3,2)
+plt.hist(img2.ravel(),256)
+plt.subplot(2,3,3)
+plt.imshow(img,camp='gray')plt里面的imshow 前面的图像和后面的类型要一致
+plt.axis('off')//不显示坐标轴
+它默认的色彩是RGB
+
+b,g,r=cv2.spilt(img)
+img2=cv2.merge([r,g,b])//bgr转为rgb
+
+###傅里叶变换
+是可逆的
+相位差
+傅里叶变换 可以得到低频和高频信息
+然后分别进行处理 实现不同目的
+
+###高低频
+低频是指变化缓慢的灰度分量 一般为细节
+高频相反 主要为边界
+
+能让低频通过的滤波器叫做低通滤波器      可以模糊图像
+同理也有高通滤波器           可以增强尖锐的细节/边缘  但会失去一些细节
+
+频域滤波
+在频谱图像中滤波/修改 之后进行逆傅里叶变换 实现原本图像的改变

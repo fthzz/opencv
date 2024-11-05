@@ -1,0 +1,70 @@
+ #查找轮廓的函数
+def findcontour(img):
+    gray = cv.cvtColor(img, cv2.COLOR_BGR2GRAY)  # 图像灰度化
+    ret, binary = cv.threshold(gray, 127, 255, cv2.THRESH_BINARY)  # 图像二值化
+    contours= cv.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]  # 查找物体轮廓
+    return contours
+
+#识别红色
+lower_red = np.array([0, 43, 46])
+upper_red = np.array([10, 255, 255])
+mask0 = cv.inRange(img,lower_red,upper_red)
+lower_red = np.array([156, 43, 46])
+upper_red = np.array([180, 255, 255])
+mask1 = cv.inRange(img,lower_red,upper_red)
+maskred = mask0 + mask1
+
+#识别其他颜色
+lower_green=np.array([35,43,46])
+upper_green=np.array([77,255,255])
+maskgreen=cv.inRange(img,lower_green,upper_green)
+
+#最小外接矩形
+       rect = cv.minAreaRect(contours)# rect返回矩形的特征信息，其结构为【最小外接矩形的中心（x，y），（宽度，高度），旋转角度】
+    points = cv.boxPoints(rect)  # 得到最小外接矩形的四个点坐标
+    points = np.int0(points)  # 坐标值取整
+    dst = cv.drawContours(img, [points], 0, (0, 0, 255), 2)  # 直接在原图上绘制矩形框
+
+#np傅里叶变换
+f=np.fft.fft2(img)
+fshift=np.fft.fftshift(f)//将低频区域移到图像中间
+
+ishift=cv2.fft.ifftshift(fshift)/逆变换
+iimg=cv2.fft.ifft2(ishift)
+
+result=20*np.log(np.abs(fshift))//将数值转化[0-255]
+result是一个频谱图像
+
+#opencv傅里叶
+
+dft=cv2.dft(np.float32(img),flags=cv2.DFT_COMPLEX_OUTPUT)
+dftshift=np.fft.fftshift(dft)
+//逆傅里叶
+ishift=np.fft.ifftshift(dftshift)//移动回原来位置
+iimg=cv2.idft(ishift)//变为原来图像
+iimg=cv2.magnitude(iimg[:,:,0],iimg[:,:,1])//转化为正常图像的数值
+
+result=20*np.log(cv2.magnitude(dftshift[:,:,0],dftshift[:,:,1])) //频谱图
+
+
+#掩膜
+对频谱图象进行处理 需要用到掩膜
+
+//实现低通滤波
+rows，cols=img.shape
+crow,ccol=rows/2,cols/2 //求出中心点
+mask=np.zeros((rows,cols,2),np.uint8)     //    mask=np.ones((rows,cols,2),np.uint8)
+mask[crow-30:crow+30,ccol-30:ccol+30]=1   #改为0则为高通滤波
+
+f=dftshift*mask
+i=np.fft.ifftshift(f)
+img=cv2.idft(i)
+img=cv2.magnitude(img[:,:,0],img[:,:,1])//得到图像
+
+//处理竖状条纹
+mask=np.zeros((rows,cols,2),np.uint8)
+mask[crow-10:crow+10,:ccol-10]=0
+mask[crow-10:crow+10,ccol+10]=0
+mask[crow-10:crow+10,ccol-10:ccol+10]=1
+mask[:crow-10,:]=1
+mask[crow+10:,:]=1
